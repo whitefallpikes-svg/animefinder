@@ -40,7 +40,7 @@ dialog::backdrop{background:rgba(0,0,0,.72)}.viewer{display:grid;grid-template-c
 .citem.dragging{opacity:.4}
 @media(max-width:1100px){.layout{grid-template-columns:1fr}.viewer{grid-template-columns:1fr}}
 </style></head><body>
-<header><div class="wrap"><div class="brand"><div class="logo">⚡</div><div>AnimeCharacter Finder <span class="badge">Hızlı mod</span></div></div>
+<header><div class="wrap"><div class="brand"><div class="logo">⚡</div><div>AnimeCharacter Finder <span class="badge">Web sitesi</span></div></div>
 <div class="searchbar"><input id="q" placeholder="Ara..."><button onclick="findGoogle(0)">Ara</button><button class="ghost" onclick="findGoogle(page+1)">🔄 Yeni görseller</button><button class="ghost" onclick="openSettings()">Ayarlar</button></div></div></header>
 <div class="layout">
 <aside><h3>Geçmiş</h3><div id="history"></div>
@@ -55,17 +55,17 @@ dialog::backdrop{background:rgba(0,0,0,.72)}.viewer{display:grid;grid-template-c
 <dialog id="viewer"><div class="viewer"><img id="viewerImg"><div class="side"><strong id="viewerTitle"></strong><span class="title" id="viewerSource"></span>
 <button onclick="upscaleCurrent()">🔍 4x Büyüt ve İndir</button><button class="ghost" onclick="saveCurrent()">📁 Kaydet</button><button class="ghost" onclick="favCurrent()">❤️ Favori</button><button class="ghost" onclick="openOriginal()">🌐 Kaynağı aç</button><button class="ghost" onclick="document.getElementById('viewer').close()">Kapat</button></div></div></dialog>
 <dialog id="settings"><div class="side"><strong>Ayarlar</strong>
-<label class="title">SerpApi Private API Key (zorunlu)</label><input id="serpKey" placeholder="SerpApi Private API Key">
 <label class="title">Google Gemini API anahtarı (opsiyonel)</label><input id="geminiKey" placeholder="AIza...">
+<label class="title">SerpApi Private API Key (zorunlu)</label><input id="serpKey" placeholder="SerpApi Private API Key">
 <label class="title">Tema</label><select id="theme"><option value="purple">Mor / Pembe</option><option value="pink">Pembe</option><option value="blue">Mor / Mavi</option></select>
 <div class="row" style="margin-top:12px"><button onclick="saveSettings()">Kaydet</button><button class="ghost" onclick="diagnose()">🩺 Sorun Bulucu</button><button class="ghost" onclick="document.getElementById('settings').close()">Kapat</button></div></div></dialog>
 <div class="toast" id="toast"></div>
 <script>
 const $=s=>document.querySelector(s);
-let state;try{state=JSON.parse(localStorage.getItem('acf_fast_final')||'null')||{}}catch(e){state={}}
-state.history??=[];state.favorites??=[];state.saved??=[];state.cache??={};state.settings??={serpKey:'',geminiKey:'',theme:'purple'};
+let state;try{state=JSON.parse(localStorage.getItem('acf_final_v1')||'null')||{}}catch(e){state={}}
+state.history??=[];state.favorites??=[];state.saved??=[];state.cache??={};state.settings??={geminiKey:'',serpKey:'',theme:'purple'};
 let items=[],current=null,lastError=null,page=0,loading=false,lastQuery='',collectionMode='fav';
-function persist(){localStorage.setItem('acf_fast_final',JSON.stringify(state))}
+function persist(){localStorage.setItem('acf_final_v1',JSON.stringify(state))}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400)}
 function applyTheme(){const t=state.settings.theme;document.documentElement.style.setProperty('--accent',t==='pink'?'#ec4899':t==='blue'?'#6366f1':'#8b5cf6');document.documentElement.style.setProperty('--accent2',t==='pink'?'#a855f7':t==='blue'?'#22d3ee':'#ec4899')}applyTheme();
 function cur(){return $('#q').value.trim()}
@@ -75,11 +75,12 @@ document.querySelectorAll('#history .chip').forEach(el=>el.onclick=()=>{$('#q').
 if(!$('#q').value&&state.history[0])$('#q').placeholder='Son arama: '+state.history[0]}
 function removeFav(i){state.favorites.splice(i,1);persist();renderSidebar();if(collectionMode==='fav')openCollection('fav');toast('Favoriden kaldırıldı')}
 function removeSaved(i){state.saved.splice(i,1);persist();renderSidebar();if(collectionMode==='saved')openCollection('saved');toast('Kayıttan kaldırıldı')}
-function renderStatus(){const s=(state.settings.serpKey||'').trim();
+function renderStatus(){const g=(state.settings.geminiKey||'').trim(),s=(state.settings.serpKey||'').trim();
 $('#status').innerHTML=`<div class="kv"><span>Kaynak</span><span class="ok">Google</span></div>
-<div class="kv"><span>Arama</span><span class="ok">Hızlı mod</span></div>
+<div class="kv"><span>Gemini</span><span class="${g?'ok':'warn'}">${g?'Hazır':'Hızlı mod'}</span></div>
 <div class="kv"><span>SerpApi</span><span class="${s?'ok':'bad'}">${s?'Hazır':'Anahtar yok'}</span></div>
-<div class="kv"><span>Sayfa</span><span>${page+1}</span></div>`}
+<div class="kv"><span>Sayfa</span><span>${page+1}</span></div><div id="aiTest"></div>`}
+function setAI(t,cls){const e=$('#aiTest');if(e)e.innerHTML=`<div class="kv"><span>Gemini</span><span class="${cls||''}">${t}</span></div>`}
 function localPlan(raw){
  const q=raw.toLowerCase();
  let character=raw,style='',tbs='';
@@ -103,10 +104,26 @@ function localPlan(raw){
  character=character.replace(/\b(için|bul|görselleri|görsel|resim|fotoğrafları|çalışmalarını|çalışması|bir|tane)\b/gi,' ').replace(/\s+/g,' ').trim()||raw;
  return {character,googleQuery:[character,style,'anime','official art'].filter(Boolean).join(' '),tbs};
 }
+async function geminiPlan(raw){
+ const key=(state.settings.geminiKey||'').trim();
+ if(!key){setAI('Hızlı mod','warn');return localPlan(raw)}
+ if(state.cache[raw]?.plan)return state.cache[raw].plan;
+ setAI('Gemini planlıyor…','warn');
+ const prompt=`Anime görsel arama isteğini JSON'a çevir. Sadece JSON: {"character":"","googleQuery":""}. googleQuery İngilizce, kısa ve görsel odaklı olsun. İstek: "${raw}"`;
+ try{
+  const ctrl=new AbortController();setTimeout(()=>ctrl.abort(),8000);
+  const r=await fetch('/api/gemini',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}}),signal:ctrl.signal});
+  if(!r.ok){setAI('Gemini atlandı','warn');return localPlan(raw)}
+  const j=await r.json();const p=JSON.parse(j?.candidates?.[0]?.content?.parts?.[0]?.text||'{}');
+  if(p?.googleQuery){setAI('Hazır','ok');return p}
+  setAI('Plan yok','warn');return localPlan(raw)
+ }catch(e){setAI('Gemini atlandı','warn');return localPlan(raw)}
+}
 async function fetchPage(query,page){
  const key=(state.settings.serpKey||'').trim();
- const plan=localPlan(lastQuery);
- const r=await fetch('/api/search?key='+encodeURIComponent(key)+'&q='+encodeURIComponent(query)+'&ijn='+page+'&tbs='+encodeURIComponent(plan.tbs));
+ const plan=state.cache[lastQuery]?.plan||localPlan(lastQuery);
+ const tbs=plan.tbs||'';
+ const r=await fetch('/api/search?key='+encodeURIComponent(key)+'&q='+encodeURIComponent(query)+'&ijn='+page+'&tbs='+encodeURIComponent(tbs));
  const j=await r.json();
  if(j?.error)throw new Error(j.error);
  return (j.images_results||[]).slice(0,30).map(x=>({query:lastQuery,title:x.title,thumb:x.thumbnail||x.original,full:x.original,source:'google',sourceLabel:'Google',sourceDetail:x.source||'',link:x.link}));
@@ -117,19 +134,20 @@ async function findGoogle(p){
   $('#results').innerHTML='<div class="status">⚡ Google Görseller aranıyor…</div>'}
  loading=true;renderStatus();
  try{
-  const plan=localPlan(raw);
+  const plan=state.cache[raw]?.plan||await geminiPlan(raw);
+  if(p===0)state.cache[raw]={plan};
   const newItems=await fetchPage(plan.googleQuery,p);
   if(p===0){items=newItems;if(!items.length){lastError={step:'Google',reason:'Boş sonuç',fix:'Daha genel ara'};showFailure();loading=false;return}}
   else{const seen=new Set(items.map(x=>x.full));const fresh=newItems.filter(x=>!seen.has(x.full));
    if(!fresh.length){toast('Bu sayfada yeni görsel kalmadı');loading=false;renderResults(items);return}
    items=items.concat(fresh)}
   items.sort(()=>Math.random()-0.5);
-  renderResults(items);
+  state.cache[raw].items=items;persist();renderResults(items);
   if(p===0)toast(items.length+' görsel');else toast('Yeni görseller eklendi');
  }catch(e){if(p===0){lastError={step:'SerpApi',reason:e.message||'Bağlantı hatası',fix:'Anahtar/kota kontrol et'};showFailure()}else toast('Yeni sayfa yüklenemedi')}
  loading=false;renderStatus()}
 function renderResults(list){if(!list.length){$('#results').innerHTML='<div class="status">Sonuç yok.</div>';return}
-$('#results').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>${list[0].query}</strong><span class="badge">${list.length} görsel</span></div><div class="grid">`+list.map((x,i)=>`<div class="imgcard"><span class="source">Google</span><img src="${x.thumb}" data-i="${i}" loading="lazy" decoding="async"><div class="meta"><div class="title">${x.title||''}</div><div class="row"><button class="small ghost" data-open="${i}">Aç</button><button class="small ghost" data-save="${i}">📁</button><button class="small ghost" data-fav="${i}">❤️</button></div></div></div>`).join('')+'</div>';
+$('#results').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>${list[0].query}</strong><span class="badge">${list.length} görsel</span></div><div class="grid">`+list.map((x,i)=>`<div class="imgcard"><span class="source">Google</span><img src="${x.thumb}" data-i="${i}"><div class="meta"><div class="title">${x.title||''}</div><div class="row"><button class="small ghost" data-open="${i}">Aç</button><button class="small ghost" data-save="${i}">📁</button><button class="small ghost" data-fav="${i}">❤️</button></div></div></div>`).join('')+'</div>';
 window.__items=list;
 document.querySelectorAll('#results img[data-i]').forEach(el=>el.onclick=()=>openViewer(window.__items[+el.dataset.i]));
 document.querySelectorAll('#results [data-open]').forEach(el=>el.onclick=()=>openViewer(window.__items[+el.dataset.open]));
@@ -153,36 +171,6 @@ $('#cIcon').textContent=mode==='fav'?'❤️':'📁';$('#cTitle').textContent=mo
 renderCollection(list);$('#collection').classList.add('open')}
 function closeCollection(){$('#collection').classList.remove('open')}
 function renderCollection(list){const g=$('#cGrid');g.innerHTML='';
-const bar=document.createElement('div');bar.className='row';bar.style.marginBottom='12px';
-const all=document.createElement('button');all.className='small ghost';all.textContent='Tümünü seç';
-const dl=document.createElement('button');dl.className='small';dl.textContent='💾 Seçilenleri PC’ye kaydet';
-bar.appendChild(all);bar.appendChild(dl);g.appendChild(bar);
-if(!list.length){const s=document.createElement('div');s.className='status';s.textContent='Henüz görsel yok.';g.appendChild(s);return}
-list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
-const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
-const check=document.createElement('input');check.type='checkbox';check.dataset.url=x.full||x.thumb;check.style.cssText='position:absolute;top:8px;right:8px;width:20px;height:20px;cursor:pointer';
-item.appendChild(check);
-const btn=document.createElement('button');btn.className='small ghost';btn.textContent='✖';btn.style.cssText='position:absolute;bottom:6px;right:38px';
-btn.onclick=e=>{e.stopPropagation();const arr=collectionMode==='fav'?state.favorites:state.saved;arr.splice(i,1);persist();renderCollection(arr);toast('Kaldırıldı')};item.appendChild(btn);
-item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',i);item.classList.add('dragging')});
-item.addEventListener('dragend',()=>item.classList.remove('dragging'));
-item.addEventListener('dragover',e=>e.preventDefault());
-item.addEventListener('drop',e=>{e.preventDefault();const from=+e.dataTransfer.getData('text'),to=i;const arr=collectionMode==='fav'?state.favorites:state.saved;const[m]=arr.splice(from,1);arr.splice(to,0,m);persist();renderCollection(arr)});
-g.appendChild(item)});
-all.onclick=()=>{g.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true)};
-dl.onclick=async()=>{
- const urls=[...g.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.dataset.url);
- if(!urls.length)return toast('Önce görsel seç');
- toast(urls.length+' görsel indiriliyor…');
- for(let i=0;i<urls.length;i++){
-  try{
-   const r=await fetch('/api/download?url='+encodeURIComponent(urls[i]));
-   const b=await r.blob();
-   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='anime-'+(i+1)+'.jpg';a.click();
-   await new Promise(r=>setTimeout(r,400));
-  }catch(e){}
- }
- toast('İndirme tamamlandı')}}{const g=$('#cGrid');g.innerHTML='';
 if(!list.length){g.innerHTML='<div class="status">Henüz görsel yok.</div>';return}
 list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
 const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
@@ -200,23 +188,8 @@ async function diagnose(){
  else{try{const r=await fetch('/api/search?key='+encodeURIComponent(s)+'&q=rem anime');const j=await r.json();
   out=j?.error?`<div class="diag"><strong>SerpApi:</strong> <span class="bad">Reddedildi</span><br>${j.error}</div>`:(j?.images_results?.length?`<div class="diag"><strong>SerpApi:</strong> <span class="ok">Çalışıyor</span><br>${j.images_results.length} görsel</div>`:`<div class="diag"><strong>SerpApi:</strong> <span class="warn">Sonuç yok</span></div>`)}catch(e){out='<div class="diag"><strong>SerpApi:</strong> <span class="bad">Test edilemedi</span></div>'}}
  $('#diagnosis').innerHTML=out}
-function openSettings(){$('#serpKey').value=state.settings.serpKey||'';$('#geminiKey').value=state.settings.geminiKey||'';$('#theme').value=state.settings.theme;$('#settings').showModal()}
-function saveSettings(){state.settings.serpKey=$('#serpKey').value.trim();state.settings.geminiKey=$('#geminiKey').value.trim();state.settings.theme=$('#theme').value;persist();applyTheme();renderStatus();$('#settings').close();toast('Ayarlar kaydedildi')}
+function openSettings(){$('#geminiKey').value=state.settings.geminiKey||'';$('#serpKey').value=state.settings.serpKey||'';$('#theme').value=state.settings.theme;$('#settings').showModal()}
+function saveSettings(){state.settings.geminiKey=$('#geminiKey').value.trim();state.settings.serpKey=$('#serpKey').value.trim();state.settings.theme=$('#theme').value;persist();applyTheme();renderStatus();$('#settings').close();toast('Ayarlar kaydedildi')}
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')findGoogle(0)});
 renderSidebar();renderStatus();
- from flask import send_file
-from io import BytesIO
-@app.get('/api/download')
-def download():
-    url=request.args.get('url','')
-    if not url:
-        return jsonify({'error':'url eksik'}),400
-    try:
-        req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
-        with urllib.request.urlopen(req,timeout=25) as r:
-            data=r.read()
-            ctype=r.headers.get('Content-Type','image/jpeg')
-        return send_file(BytesIO(data),mimetype=ctype,as_attachment=True,download_name='image.jpg')
-    except Exception as e:
-        return jsonify({'error':str(e)}),502
 </script></body></html>
