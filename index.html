@@ -125,7 +125,44 @@ function saveItem(x){if(!state.saved.some(s=>s.full===x.full)){state.saved.unshi
 function favItem(x){if(!state.favorites.some(s=>s.full===x.full)){state.favorites.unshift(x);persist();renderSidebar();toast('Favorilere eklendi')}else toast('Zaten favoride')}
 function saveCurrent(){saveItem(current)}function favCurrent(){favItem(current)}
 function openOriginal(){if(current?.link)window.open(current.link,'_blank')}
-async function upscaleCurrent(){toast('2x büyütülüyor…');const img=$('#viewerImg'),c=document.createElement('canvas');c.width=img.naturalWidth*2;c.height=img.naturalHeight*2;const ctx=c.getContext('2d');ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(current.query||'image')+'-2x.png';a.click();toast('2x görsel indirildi')},'image/png')}
+async function upscaleCurrent(){
+ toast('4x büyütülüyor…');
+ const img=$('#viewerImg');
+ let src=img;
+ for(let i=0;i<2;i++){
+  const c=document.createElement('canvas');
+  c.width=src.naturalWidth*2;
+  c.height=src.naturalHeight*2;
+  const ctx=c.getContext('2d');
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(src,0,0,c.width,c.height);
+  src=c;
+ }
+ const out=document.createElement('canvas');
+ out.width=src.width;out.height=src.height;
+ const octx=out.getContext('2d');
+ octx.drawImage(src,0,0);
+ const id=octx.getImageData(0,0,out.width,out.height);
+ const d=id.data;
+ const sharp=[0,-1,0,-1,5,-1,0,-1,0];
+ const w=out.width,h=out.height;
+ const copy=new Uint8ClampedArray(d);
+ for(let y=1;y<h-1;y++){
+  for(let x=1;x<w-1;x++){
+   const i=(y*w+x)*4;
+   for(let ch=0;ch<3;ch++){
+    let sum=0,k=0;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+     sum+=copy[((y+dy)*w+(x+dx))*4+ch]*sharp[k++];
+    }
+    d[i+ch]=Math.max(0,Math.min(255,sum));
+   }
+  }
+ }
+ octx.putImageData(id,0,0);
+ out.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(current.query||'image')+'-4x.png';a.click();toast('4x görsel indirildi')},'image/png');
+}(){toast('2x büyütülüyor…');const img=$('#viewerImg'),c=document.createElement('canvas');c.width=img.naturalWidth*2;c.height=img.naturalHeight*2;const ctx=c.getContext('2d');ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,c.width,c.height);c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(current.query||'image')+'-2x.png';a.click();toast('2x görsel indirildi')},'image/png')}
 async function diagnose(){
  $('#diagnosis').innerHTML='<div class="diag">🩺 Kontrol ediliyor…</div>';
  const s=(state.settings.serpKey||'').trim();let out='';
