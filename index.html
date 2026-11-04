@@ -2,7 +2,7 @@
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AnimeCharacter Finder</title>
 <style>
-:root{--bg:#0a0612;--panel:#150c24;--panel2:#1d1130;--line:#3a1f5c;--text:#f2eaff;--muted:#b9a6d9;--accent:#8b5cf6;--accent2:#ec4899;--ok:#22c55e;--bad:#ef4444}
+:root{--bg:#0a0612;--panel:#150c24;--panel2:#1d1130;--line:#3a1f5c;--text:#f2eaff;--muted:#b9a6d9;--accent:#8b5cf6;--accent2:#ec4899;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:radial-gradient(1200px 600px at 80% -10%,rgba(139,92,246,.25),transparent),radial-gradient(900px 500px at -10% 110%,rgba(236,72,153,.18),transparent),var(--bg);color:var(--text);min-height:100vh}
 header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);background:rgba(10,6,18,.86);border-bottom:1px solid var(--line)}
 .wrap{max-width:1400px;margin:auto;padding:14px 20px}.brand{display:flex;gap:12px;align-items:center;font-weight:800}
@@ -48,7 +48,7 @@ dialog::backdrop{background:rgba(0,0,0,.72)}.viewer{display:grid;grid-template-c
 <div class="chip" onclick="openCollection('fav')">❤️ Favoriler</div>
 <div class="chip" onclick="openCollection('saved')">📁 Kaydedilenler</div>
 </aside>
-<main><div id="results" class="card"><div class="status">Aramak için yaz ve <strong>Ara</strong>’ya bas.<br><br>Aynı aramada yeni görseller için <strong>🔄 Yeni görseller</strong>’e bas.</div></div></main>
+<main><div id="results" class="card"><div class="status">Aramak için yaz ve <strong>Ara</strong>’ya bas.<br><br>Örn: <strong>rem</strong>, <strong>rem 2024</strong>, <strong>rem 4.11.2026</strong></div></div></main>
 <div class="rightbar"><h3>Durum</h3><div id="status"></div><button class="ghost small" style="margin-top:10px" onclick="diagnose()">🩺 Sorun Bulucu</button><div id="diagnosis"></div></div>
 </div>
 <div class="collection" id="collection"><h2><span id="cIcon"></span><span id="cTitle"></span><button class="ghost small" onclick="closeCollection()">Kapat</button></h2><div class="cgrid" id="cGrid"></div></div>
@@ -62,10 +62,10 @@ dialog::backdrop{background:rgba(0,0,0,.72)}.viewer{display:grid;grid-template-c
 <div class="toast" id="toast"></div>
 <script>
 const $=s=>document.querySelector(s);
-let state;try{state=JSON.parse(localStorage.getItem('acf_v3_site')||'null')||{}}catch(e){state={}}
+let state;try{state=JSON.parse(localStorage.getItem('acf_final_v1')||'null')||{}}catch(e){state={}}
 state.history??=[];state.favorites??=[];state.saved??=[];state.cache??={};state.settings??={geminiKey:'',serpKey:'',theme:'purple'};
 let items=[],current=null,lastError=null,page=0,loading=false,lastQuery='',collectionMode='fav';
-function persist(){localStorage.setItem('acf_v3_site',JSON.stringify(state))}
+function persist(){localStorage.setItem('acf_final_v1',JSON.stringify(state))}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400)}
 function applyTheme(){const t=state.settings.theme;document.documentElement.style.setProperty('--accent',t==='pink'?'#ec4899':t==='blue'?'#6366f1':'#8b5cf6');document.documentElement.style.setProperty('--accent2',t==='pink'?'#a855f7':t==='blue'?'#22d3ee':'#ec4899')}applyTheme();
 function cur(){return $('#q').value.trim()}
@@ -81,11 +81,29 @@ $('#status').innerHTML=`<div class="kv"><span>Kaynak</span><span class="ok">Goog
 <div class="kv"><span>SerpApi</span><span class="${s?'ok':'bad'}">${s?'Hazır':'Anahtar yok'}</span></div>
 <div class="kv"><span>Sayfa</span><span>${page+1}</span></div><div id="aiTest"></div>`}
 function setAI(t,cls){const e=$('#aiTest');if(e)e.innerHTML=`<div class="kv"><span>Gemini</span><span class="${cls||''}">${t}</span></div>`}
-function localPlan(raw){const q=raw.toLowerCase();let character=raw,style='';
-const pairs=[['karakalem','drawing sketch'],['çizim','drawing'],['tatlı','cute'],['sevimli','cute'],['chibi','chibi'],['fanart','fanart'],['cosplay','cosplay'],['duvar kağıdı','wallpaper'],['görsel','image'],['resim','image'],['fotoğraf','photo']];
-for(const [tr,en] of pairs){if(q.includes(tr)){style=en;character=character.replace(new RegExp(tr,'gi'),'')}}
-character=character.replace(/\b(için|bul|görselleri|görsel|resim|fotoğrafları|çalışmalarını|çalışması|bir|tane)\b/gi,' ').replace(/\s+/g,' ').trim()||raw;
-return {character,googleQuery:[character,style,'anime','official art'].filter(Boolean).join(' ')}}
+function localPlan(raw){
+ const q=raw.toLowerCase();
+ let character=raw,style='',tbs='';
+ const pairs=[['karakalem','drawing sketch'],['çizim','drawing'],['tatlı','cute'],['sevimli','cute'],['chibi','chibi'],['fanart','fanart'],['cosplay','cosplay'],['duvar kağıdı','wallpaper'],['görsel','image'],['resim','image'],['fotoğraf','photo']];
+ for(const [tr,en] of pairs){if(q.includes(tr)){style=en;character=character.replace(new RegExp(tr,'gi'),'')}}
+ const dm=character.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})\b/);
+ const ym=character.match(/\b(20\d{2})\b/);
+ if(dm){
+  const d=dm[1],m=dm[2],y=dm[3];
+  tbs=`cdr:1,cd_min:${m}/${d}/${y},cd_max:${m}/${d}/${y}`;
+  character=character.replace(dm[0],'');
+ }else if(ym){
+  const y=ym[1];
+  tbs=`cdr:1,cd_min:1/1/${y},cd_max:12/31/${y}`;
+  character=character.replace(ym[0],'');
+ }else{
+  const y1=2016+Math.floor(Math.random()*9);
+  const y2=Math.min(2026,y1+Math.floor(Math.random()*4)+1);
+  tbs=`cdr:1,cd_min:1/1/${y1},cd_max:12/31/${y2}`;
+ }
+ character=character.replace(/\b(için|bul|görselleri|görsel|resim|fotoğrafları|çalışmalarını|çalışması|bir|tane)\b/gi,' ').replace(/\s+/g,' ').trim()||raw;
+ return {character,googleQuery:[character,style,'anime','official art'].filter(Boolean).join(' '),tbs};
+}
 async function geminiPlan(raw){
  const key=(state.settings.geminiKey||'').trim();
  if(!key){setAI('Hızlı mod','warn');return localPlan(raw)}
@@ -103,7 +121,9 @@ async function geminiPlan(raw){
 }
 async function fetchPage(query,page){
  const key=(state.settings.serpKey||'').trim();
- const r=await fetch('/api/search?key='+encodeURIComponent(key)+'&q='+encodeURIComponent(query)+'&ijn='+page);
+ const plan=state.cache[lastQuery]?.plan||localPlan(lastQuery);
+ const tbs=plan.tbs||'';
+ const r=await fetch('/api/search?key='+encodeURIComponent(key)+'&q='+encodeURIComponent(query)+'&ijn='+page+'&tbs='+encodeURIComponent(tbs));
  const j=await r.json();
  if(j?.error)throw new Error(j.error);
  return (j.images_results||[]).slice(0,30).map(x=>({query:lastQuery,title:x.title,thumb:x.thumbnail||x.original,full:x.original,source:'google',sourceLabel:'Google',sourceDetail:x.source||'',link:x.link}));
