@@ -153,6 +153,36 @@ $('#cIcon').textContent=mode==='fav'?'❤️':'📁';$('#cTitle').textContent=mo
 renderCollection(list);$('#collection').classList.add('open')}
 function closeCollection(){$('#collection').classList.remove('open')}
 function renderCollection(list){const g=$('#cGrid');g.innerHTML='';
+const bar=document.createElement('div');bar.className='row';bar.style.marginBottom='12px';
+const all=document.createElement('button');all.className='small ghost';all.textContent='Tümünü seç';
+const dl=document.createElement('button');dl.className='small';dl.textContent='💾 Seçilenleri PC’ye kaydet';
+bar.appendChild(all);bar.appendChild(dl);g.appendChild(bar);
+if(!list.length){const s=document.createElement('div');s.className='status';s.textContent='Henüz görsel yok.';g.appendChild(s);return}
+list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
+const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
+const check=document.createElement('input');check.type='checkbox';check.dataset.url=x.full||x.thumb;check.style.cssText='position:absolute;top:8px;right:8px;width:20px;height:20px;cursor:pointer';
+item.appendChild(check);
+const btn=document.createElement('button');btn.className='small ghost';btn.textContent='✖';btn.style.cssText='position:absolute;bottom:6px;right:38px';
+btn.onclick=e=>{e.stopPropagation();const arr=collectionMode==='fav'?state.favorites:state.saved;arr.splice(i,1);persist();renderCollection(arr);toast('Kaldırıldı')};item.appendChild(btn);
+item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',i);item.classList.add('dragging')});
+item.addEventListener('dragend',()=>item.classList.remove('dragging'));
+item.addEventListener('dragover',e=>e.preventDefault());
+item.addEventListener('drop',e=>{e.preventDefault();const from=+e.dataTransfer.getData('text'),to=i;const arr=collectionMode==='fav'?state.favorites:state.saved;const[m]=arr.splice(from,1);arr.splice(to,0,m);persist();renderCollection(arr)});
+g.appendChild(item)});
+all.onclick=()=>{g.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true)};
+dl.onclick=async()=>{
+ const urls=[...g.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.dataset.url);
+ if(!urls.length)return toast('Önce görsel seç');
+ toast(urls.length+' görsel indiriliyor…');
+ for(let i=0;i<urls.length;i++){
+  try{
+   const r=await fetch('/api/download?url='+encodeURIComponent(urls[i]));
+   const b=await r.blob();
+   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='anime-'+(i+1)+'.jpg';a.click();
+   await new Promise(r=>setTimeout(r,400));
+  }catch(e){}
+ }
+ toast('İndirme tamamlandı')}}{const g=$('#cGrid');g.innerHTML='';
 if(!list.length){g.innerHTML='<div class="status">Henüz görsel yok.</div>';return}
 list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
 const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
@@ -174,4 +204,19 @@ function openSettings(){$('#serpKey').value=state.settings.serpKey||'';$('#gemin
 function saveSettings(){state.settings.serpKey=$('#serpKey').value.trim();state.settings.geminiKey=$('#geminiKey').value.trim();state.settings.theme=$('#theme').value;persist();applyTheme();renderStatus();$('#settings').close();toast('Ayarlar kaydedildi')}
 $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')findGoogle(0)});
 renderSidebar();renderStatus();
+ from flask import send_file
+from io import BytesIO
+@app.get('/api/download')
+def download():
+    url=request.args.get('url','')
+    if not url:
+        return jsonify({'error':'url eksik'}),400
+    try:
+        req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
+        with urllib.request.urlopen(req,timeout=25) as r:
+            data=r.read()
+            ctype=r.headers.get('Content-Type','image/jpeg')
+        return send_file(BytesIO(data),mimetype=ctype,as_attachment=True,download_name='image.jpg')
+    except Exception as e:
+        return jsonify({'error':str(e)}),502
 </script></body></html>
