@@ -16,9 +16,13 @@ def search():
     key=request.args.get('key','')
     q=request.args.get('q','')
     page=request.args.get('ijn','0')
+    tbs=request.args.get('tbs','')
     if not key or not q:
         return jsonify({'error':'SerpApi anahtarı veya arama eksik'}),400
-    url=SERPAPI+'?'+urllib.parse.urlencode({'engine':'google_images','q':q,'safe':'active','api_key':key,'ijn':page})
+    params={'engine':'google_images','q':q,'safe':'active','api_key':key,'ijn':page}
+    if tbs:
+        params['tbs']=tbs
+    url=SERPAPI+'?'+urllib.parse.urlencode(params)
     try:
         with urllib.request.urlopen(url,timeout=20) as r:
             data=json.loads(r.read())
