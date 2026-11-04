@@ -104,7 +104,7 @@ async function findGoogle(p){
   $('#results').innerHTML='<div class="status">⚡ Google Görseller aranıyor…</div>'}
  loading=true;renderStatus();
  try{
-  const plan=state.cache[raw]?.plan||await geminiPlan(raw);
+ const plan=localPlan(raw);
   if(p===0)state.cache[raw]={plan};
   const newItems=await fetchPage(plan.googleQuery,p);
   if(p===0){items=newItems;if(!items.length){lastError={step:'Google',reason:'Boş sonuç',fix:'Daha genel ara'};showFailure();loading=false;return}}
