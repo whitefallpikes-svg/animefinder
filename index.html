@@ -1,222 +1,64 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AnimeCharacter Finder</title>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AnimeSearch</title>
 <style>
-:root{--bg:#0a0612;--panel:#150c24;--panel2:#1d1130;--line:#3a1f5c;--text:#f2eaff;--muted:#b9a6d9;--accent:#8b5cf6;--accent2:#ec4899;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;background:radial-gradient(1200px 600px at 80% -10%,rgba(139,92,246,.25),transparent),radial-gradient(900px 500px at -10% 110%,rgba(236,72,153,.18),transparent),var(--bg);color:var(--text);min-height:100vh}
-header{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px);background:rgba(10,6,18,.86);border-bottom:1px solid var(--line)}
-.wrap{max-width:1400px;margin:auto;padding:14px 20px}.brand{display:flex;gap:12px;align-items:center;font-weight:800}
-.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center}
-.searchbar{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}input,select{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;outline:none;width:100%}#q{flex:1;min-width:220px}
-button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));white-space:nowrap}
-.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--text)}.small{padding:8px 10px;font-size:13px;border-radius:10px}
-.layout{display:grid;grid-template-columns:250px 1fr 260px;gap:16px;max-width:1400px;margin:18px auto;padding:0 20px}
-aside,.rightbar{background:rgba(21,12,36,.78);border:1px solid var(--line);border-radius:18px;padding:16px;height:fit-content}
-h3{font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:1px;margin:16px 0 8px}
-.chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:7px 11px;margin:3px;cursor:pointer;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.chip .x{color:var(--bad);font-weight:800}
-.card{background:rgba(21,12,36,.78);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-.imgcard{background:var(--panel2);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative}
-.imgcard img{width:100%;height:200px;object-fit:cover;display:block;background:#241539;cursor:pointer}
-.meta{padding:10px;display:flex;flex-direction:column;gap:8px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.title{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.source{position:absolute;top:8px;left:8px;font-size:11px;font-weight:800;padding:4px 8px;border-radius:999px;background:rgba(10,6,18,.85);border:1px solid #8ab4f855;color:#8ab4f8}
-.status{padding:30px;text-align:center;color:var(--muted)}.badge{font-size:11px;border:1px solid var(--line);background:rgba(139,92,246,.18);padding:3px 8px;border-radius:999px;color:var(--muted)}
-dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:0;max-width:min(1100px,95vw);width:95vw}
-dialog::backdrop{background:rgba(0,0,0,.72)}.viewer{display:grid;grid-template-columns:1fr 320px}
-.viewer img{width:100%;max-height:70vh;object-fit:contain;background:#08040f;display:block}
-.side{padding:16px;display:flex;flex-direction:column;gap:10px}
-.toast{position:fixed;right:20px;bottom:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));padding:12px 16px;border-radius:12px;font-weight:700;opacity:0;transform:translateY(12px);transition:.25s;z-index:99;max-width:90vw}.toast.show{opacity:1;transform:none}
-.kv{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:7px 0;border-bottom:1px solid rgba(58,31,92,.45)}
-.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
-.diag{background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.4);border-radius:12px;padding:12px;margin-top:10px;font-size:13px}
-.collection{position:fixed;inset:0;background:rgba(5,2,10,.96);z-index:80;display:none;flex-direction:column;padding:20px;overflow:auto}
-.collection.open{display:flex}
-.collection h2{margin:0 0 14px;display:flex;align-items:center;gap:10px}
-.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.citem{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);cursor:grab}
-.citem img{width:100%;height:180px;object-fit:cover;display:block}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:#0b0d12;color:#e8eaf0}
+a{color:#8ab4ff}
+button{cursor:pointer}
+.topbar{position:sticky;top:0;z-index:50;display:flex;gap:12px;align-items:center;padding:10px 16px;background:rgba(11,13,18,.9);backdrop-filter:blur(10px);border-bottom:1px solid #1e2330}
+.brand{font-weight:800;letter-spacing:.5px}
+.brand span{color:#7c5cff}
+.searchwrap{flex:1;display:flex;gap:8px;max-width:860px;margin:0 auto}
+input,select,textarea{background:#12151d;border:1px solid #232a3a;color:#e8eaf0;border-radius:12px;padding:10px 12px;font-size:14px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:#7c5cff}
+.btn{background:linear-gradient(135deg,#7c5cff,#4f8cff);border:0;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700}
+.btn.ghost{background:#161a24;border:1px solid #262d3d;color:#cfd6e4}
+.small{padding:7px 10px;border-radius:10px;font-size:12px}
+.status{color:#9aa4b8;font-size:13px;padding:8px 2px}
+.layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 57px)}
+.sidebar{border-right:1px solid #1e2330;padding:14px;display:flex;flex-direction:column;gap:8px}
+.sidebtn{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:#12151d;border:1px solid #232a3a;color:#dbe2ee;text-align:left}
+.sidebtn.active{border-color:#7c5cff;background:#171327}
+.content{padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.card{position:relative;border-radius:14px;overflow:hidden;border:1px solid #232a3a;background:#12151d}
+.card img{width:100%;height:230px;object-fit:cover;display:block;cursor:pointer}
+.card .meta{padding:8px 10px;font-size:12px;color:#aab3c5;display:flex;justify-content:space-between;gap:6px}
+.chip{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);padding:4px 8px;border-radius:999px;font-size:11px}
+.fav{position:absolute;top:6px;right:6px;background:#161a24;border:1px solid #2a3245;color:#ffd166;border-radius:10px;padding:5px 8px}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.citem{position:relative;border-radius:12px;overflow:hidden;border:1px solid #232a3a}
+.citem img{width:100%;height:170px;object-fit:cover;display:block;cursor:pointer}
 .citem.dragging{opacity:.4}
-@media(max-width:1100px){.layout{grid-template-columns:1fr}.viewer{grid-template-columns:1fr}}
-</style></head><body>
-<header><div class="wrap"><div class="brand"><div class="logo">⚡</div><div>AnimeCharacter Finder <span class="badge">Hızlı mod</span></div></div>
-<div class="searchbar"><input id="q" placeholder="Ara..."><button onclick="findGoogle(0)">Ara</button><button class="ghost" onclick="findGoogle(page+1)">🔄 Yeni görseller</button><button class="ghost" onclick="openSettings()">Ayarlar</button></div></div></header>
-<div class="layout">
-<aside><h3>Geçmiş</h3><div id="history"></div>
-<h3>Koleksiyonlar</h3>
-<div class="chip" onclick="openCollection('fav')">❤️ Favoriler</div>
-<div class="chip" onclick="openCollection('saved')">📁 Kaydedilenler</div>
-</aside>
-<main><div id="results" class="card"><div class="status">Aramak için yaz ve <strong>Ara</strong>’ya bas.<br><br>Örn: <strong>rem</strong>, <strong>rem 2024</strong>, <strong>rem 4.11.2026</strong></div></div></main>
-<div class="rightbar"><h3>Durum</h3><div id="status"></div><button class="ghost small" style="margin-top:10px" onclick="diagnose()">🩺 Sorun Bulucu</button><div id="diagnosis"></div></div>
+.viewer{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100}
+.viewer.open{display:flex}
+.viewer img{max-width:92vw;max-height:82vh;border-radius:12px}
+.viewer .actions{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:8px}
+.toast{position:fixed;bottom:18px;right:18px;background:#171a24;border:1px solid #2a3245;padding:10px 14px;border-radius:12px;display:none;z-index:120}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">Anime<span>Search</span></div>
+  <div class="searchwrap">
+    <input id="q" placeholder="Ara..." autocomplete="off" spellcheck="false">
+    <select id="type" style="max-width:130px">
+      <option value="">Tümü</option>
+      <option value="anime">Anime</option>
+      <option value="manga">Manga</option>
+    </select>
+    <button class="btn" id="searchBtn">Ara</button>
+  </div>
 </div>
-<div class="collection" id="collection"><h2><span id="cIcon"></span><span id="cTitle"></span><button class="ghost small" onclick="closeCollection()">Kapat</button></h2><div class="cgrid" id="cGrid"></div></div>
-<dialog id="viewer"><div class="viewer"><img id="viewerImg"><div class="side"><strong id="viewerTitle"></strong><span class="title" id="viewerSource"></span>
-<button onclick="upscaleCurrent()">🔍 4x Büyüt ve İndir</button><button class="ghost" onclick="saveCurrent()">📁 Kaydet</button><button class="ghost" onclick="favCurrent()">❤️ Favori</button><button class="ghost" onclick="openOriginal()">🌐 Kaynağı aç</button><button class="ghost" onclick="document.getElementById('viewer').close()">Kapat</button></div></div></dialog>
-<dialog id="settings"><div class="side"><strong>Ayarlar</strong>
-<label class="title">SerpApi Private API Key (zorunlu)</label><input id="serpKey" placeholder="SerpApi Private API Key">
-<label class="title">Google Gemini API anahtarı (opsiyonel)</label><input id="geminiKey" placeholder="AIza...">
-<label class="title">Tema</label><select id="theme"><option value="purple">Mor / Pembe</option><option value="pink">Pembe</option><option value="blue">Mor / Mavi</option></select>
-<div class="row" style="margin-top:12px"><button onclick="saveSettings()">Kaydet</button><button class="ghost" onclick="diagnose()">🩺 Sorun Bulucu</button><button class="ghost" onclick="document.getElementById('settings').close()">Kapat</button></div></div></dialog>
-<div class="toast" id="toast"></div>
-<script>
-const $=s=>document.querySelector(s);
-let state;try{state=JSON.parse(localStorage.getItem('acf_fast_final')||'null')||{}}catch(e){state={}}
-state.history??=[];state.favorites??=[];state.saved??=[];state.cache??={};state.settings??={serpKey:'',geminiKey:'',theme:'purple'};
-let items=[],current=null,lastError=null,page=0,loading=false,lastQuery='',collectionMode='fav';
-function persist(){localStorage.setItem('acf_fast_final',JSON.stringify(state))}
-function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400)}
-function applyTheme(){const t=state.settings.theme;document.documentElement.style.setProperty('--accent',t==='pink'?'#ec4899':t==='blue'?'#6366f1':'#8b5cf6');document.documentElement.style.setProperty('--accent2',t==='pink'?'#a855f7':t==='blue'?'#22d3ee':'#ec4899')}applyTheme();
-function cur(){return $('#q').value.trim()}
-function renderSidebar(){
-$('#history').innerHTML=state.history.length?state.history.slice(0,14).map(x=>`<span class="chip" data-q="${encodeURIComponent(x)}">${x}</span>`).join(''):'<div class="title">Henüz arama yapılmadı.</div>';
-document.querySelectorAll('#history .chip').forEach(el=>el.onclick=()=>{$('#q').value=decodeURIComponent(el.dataset.q);findGoogle(0)});
-if(!$('#q').value&&state.history[0])$('#q').placeholder='Son arama: '+state.history[0]}
-function removeFav(i){state.favorites.splice(i,1);persist();renderSidebar();if(collectionMode==='fav')openCollection('fav');toast('Favoriden kaldırıldı')}
-function removeSaved(i){state.saved.splice(i,1);persist();renderSidebar();if(collectionMode==='saved')openCollection('saved');toast('Kayıttan kaldırıldı')}
-function renderStatus(){const s=(state.settings.serpKey||'').trim();
-$('#status').innerHTML=`<div class="kv"><span>Kaynak</span><span class="ok">Google</span></div>
-<div class="kv"><span>Arama</span><span class="ok">Hızlı mod</span></div>
-<div class="kv"><span>SerpApi</span><span class="${s?'ok':'bad'}">${s?'Hazır':'Anahtar yok'}</span></div>
-<div class="kv"><span>Sayfa</span><span>${page+1}</span></div>`}
-function localPlan(raw){
- const q=raw.toLowerCase();
- let character=raw,style='',tbs='';
- const pairs=[['karakalem','drawing sketch'],['çizim','drawing'],['tatlı','cute'],['sevimli','cute'],['chibi','chibi'],['fanart','fanart'],['cosplay','cosplay'],['duvar kağıdı','wallpaper'],['görsel','image'],['resim','image'],['fotoğraf','photo']];
- for(const [tr,en] of pairs){if(q.includes(tr)){style=en;character=character.replace(new RegExp(tr,'gi'),'')}}
- const dm=character.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})\b/);
- const ym=character.match(/\b(20\d{2})\b/);
- if(dm){
-  const d=dm[1],m=dm[2],y=dm[3];
-  tbs=`cdr:1,cd_min:${m}/${d}/${y},cd_max:${m}/${d}/${y}`;
-  character=character.replace(dm[0],'');
- }else if(ym){
-  const y=ym[1];
-  tbs=`cdr:1,cd_min:1/1/${y},cd_max:12/31/${y}`;
-  character=character.replace(ym[0],'');
- }else{
-  const y1=2016+Math.floor(Math.random()*9);
-  const y2=Math.min(2026,y1+Math.floor(Math.random()*4)+1);
-  tbs=`cdr:1,cd_min:1/1/${y1},cd_max:12/31/${y2}`;
- }
- character=character.replace(/\b(için|bul|görselleri|görsel|resim|fotoğrafları|çalışmalarını|çalışması|bir|tane)\b/gi,' ').replace(/\s+/g,' ').trim()||raw;
- return {character,googleQuery:[character,style,'anime','official art'].filter(Boolean).join(' '),tbs};
-}
-async function fetchPage(query,page){
- const key=(state.settings.serpKey||'').trim();
- const plan=localPlan(lastQuery);
- const r=await fetch('/api/search?key='+encodeURIComponent(key)+'&q='+encodeURIComponent(query)+'&ijn='+page+'&tbs='+encodeURIComponent(plan.tbs));
- const j=await r.json();
- if(j?.error)throw new Error(j.error);
- return (j.images_results||[]).slice(0,30).map(x=>({query:lastQuery,title:x.title,thumb:x.thumbnail||x.original,full:x.original,source:'google',sourceLabel:'Google',sourceDetail:x.source||'',link:x.link}));
-}
-async function findGoogle(p){
- if(loading)return;const raw=cur();if(!raw)return toast('Önce bir şey yaz');
- if(p===0){page=0;items=[];lastQuery=raw;state.history=[raw,...state.history.filter(x=>x!==raw)].slice(0,20);persist();renderSidebar();
-  $('#results').innerHTML='<div class="status">⚡ Google Görseller aranıyor…</div>'}
- loading=true;renderStatus();
- try{
-  const plan=localPlan(raw);
-  const newItems=await fetchPage(plan.googleQuery,p);
-  if(p===0){items=newItems;if(!items.length){lastError={step:'Google',reason:'Boş sonuç',fix:'Daha genel ara'};showFailure();loading=false;return}}
-  else{const seen=new Set(items.map(x=>x.full));const fresh=newItems.filter(x=>!seen.has(x.full));
-   if(!fresh.length){toast('Bu sayfada yeni görsel kalmadı');loading=false;renderResults(items);return}
-   items=items.concat(fresh)}
-  items.sort(()=>Math.random()-0.5);
-  renderResults(items);
-  if(p===0)toast(items.length+' görsel');else toast('Yeni görseller eklendi');
- }catch(e){if(p===0){lastError={step:'SerpApi',reason:e.message||'Bağlantı hatası',fix:'Anahtar/kota kontrol et'};showFailure()}else toast('Yeni sayfa yüklenemedi')}
- loading=false;renderStatus()}
-function renderResults(list){if(!list.length){$('#results').innerHTML='<div class="status">Sonuç yok.</div>';return}
-$('#results').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>${list[0].query}</strong><span class="badge">${list.length} görsel</span></div><div class="grid">`+list.map((x,i)=>`<div class="imgcard"><span class="source">Google</span><img src="${x.thumb}" data-i="${i}" loading="lazy" decoding="async"><div class="meta"><div class="title">${x.title||''}</div><div class="row"><button class="small ghost" data-open="${i}">Aç</button><button class="small ghost" data-save="${i}">📁</button><button class="small ghost" data-fav="${i}">❤️</button></div></div></div>`).join('')+'</div>';
-window.__items=list;
-document.querySelectorAll('#results img[data-i]').forEach(el=>el.onclick=()=>openViewer(window.__items[+el.dataset.i]));
-document.querySelectorAll('#results [data-open]').forEach(el=>el.onclick=()=>openViewer(window.__items[+el.dataset.open]));
-document.querySelectorAll('#results [data-save]').forEach(el=>el.onclick=()=>saveItem(window.__items[+el.dataset.save]));
-document.querySelectorAll('#results [data-fav]').forEach(el=>el.onclick=()=>favItem(window.__items[+el.dataset.fav]))}
-window.addEventListener('scroll',()=>{if(loading||!items.length)return;if(innerHeight+scrollY>=document.body.offsetHeight-400){page++;findGoogle(page)}});
-function openViewer(x){current=x;$('#viewerImg').src=x.full||x.thumb;$('#viewerTitle').textContent=x.title||x.query;$('#viewerSource').textContent='Google · '+(x.sourceDetail||'');$('#viewer').showModal()}
-function saveItem(x){if(!state.saved.some(s=>s.full===x.full)){state.saved.unshift(x);persist();toast('Kaydedilenlere eklendi')}else toast('Zaten kayıtlı')}
-function favItem(x){if(!state.favorites.some(s=>s.full===x.full)){state.favorites.unshift(x);persist();toast('Favorilere eklendi')}else toast('Zaten favoride')}
-function saveCurrent(){saveItem(current)}function favCurrent(){favItem(current)}
-function openOriginal(){if(current?.link)window.open(current.link,'_blank')}
-async function upscaleCurrent(){toast('4x büyütülüyor…');const img=$('#viewerImg');let src=img;
-for(let i=0;i<2;i++){const c=document.createElement('canvas');c.width=src.naturalWidth*2;c.height=src.naturalHeight*2;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(src,0,0,c.width,c.height);src=c}
-const out=document.createElement('canvas');out.width=src.width;out.height=src.height;const octx=out.getContext('2d');octx.drawImage(src,0,0);
-const id=octx.getImageData(0,0,out.width,out.height),d=id.data,w=out.width,h=out.height,copy=new Uint8ClampedArray(d),sharp=[0,-1,0,-1,5,-1,0,-1,0];
-for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=(y*w+x)*4;for(let ch=0;ch<3;ch++){let sum=0,k=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){sum+=copy[((y+dy)*w+(x+dx))*4+ch]*sharp[k++]}d[i+ch]=Math.max(0,Math.min(255,sum))}}
-octx.putImageData(id,0,0);
-out.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(current.query||'image')+'-4x.png';a.click();toast('4x görsel indirildi')},'image/png')}
-function openCollection(mode){collectionMode=mode;const list=mode==='fav'?state.favorites:state.saved;
-$('#cIcon').textContent=mode==='fav'?'❤️':'📁';$('#cTitle').textContent=mode==='fav'?'Favoriler':'Kaydedilenler';
-renderCollection(list);$('#collection').classList.add('open')}
-function closeCollection(){$('#collection').classList.remove('open')}
-function renderCollection(list){const g=$('#cGrid');g.innerHTML='';
-const bar=document.createElement('div');bar.className='row';bar.style.marginBottom='12px';
-const all=document.createElement('button');all.className='small ghost';all.textContent='Tümünü seç';
-const dl=document.createElement('button');dl.className='small';dl.textContent='💾 Seçilenleri PC’ye kaydet';
-bar.appendChild(all);bar.appendChild(dl);g.appendChild(bar);
-if(!list.length){const s=document.createElement('div');s.className='status';s.textContent='Henüz görsel yok.';g.appendChild(s);return}
-list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
-const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
-const check=document.createElement('input');check.type='checkbox';check.dataset.url=x.full||x.thumb;check.style.cssText='position:absolute;top:8px;right:8px;width:20px;height:20px;cursor:pointer';
-item.appendChild(check);
-const btn=document.createElement('button');btn.className='small ghost';btn.textContent='✖';btn.style.cssText='position:absolute;bottom:6px;right:38px';
-btn.onclick=e=>{e.stopPropagation();const arr=collectionMode==='fav'?state.favorites:state.saved;arr.splice(i,1);persist();renderCollection(arr);toast('Kaldırıldı')};item.appendChild(btn);
-item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',i);item.classList.add('dragging')});
-item.addEventListener('dragend',()=>item.classList.remove('dragging'));
-item.addEventListener('dragover',e=>e.preventDefault());
-item.addEventListener('drop',e=>{e.preventDefault();const from=+e.dataTransfer.getData('text'),to=i;const arr=collectionMode==='fav'?state.favorites:state.saved;const[m]=arr.splice(from,1);arr.splice(to,0,m);persist();renderCollection(arr)});
-g.appendChild(item)});
-all.onclick=()=>{g.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=true)};
-dl.onclick=async()=>{
- const urls=[...g.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.dataset.url);
- if(!urls.length)return toast('Önce görsel seç');
- toast(urls.length+' görsel indiriliyor…');
- for(let i=0;i<urls.length;i++){
-  try{
-   const r=await fetch('/api/download?url='+encodeURIComponent(urls[i]));
-   const b=await r.blob();
-   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='anime-'+(i+1)+'.jpg';a.click();
-   await new Promise(r=>setTimeout(r,400));
-  }catch(e){}
- }
- toast('İndirme tamamlandı')}}{const g=$('#cGrid');g.innerHTML='';
-if(!list.length){g.innerHTML='<div class="status">Henüz görsel yok.</div>';return}
-list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
-const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
-const btn=document.createElement('button');btn.className='small ghost';btn.textContent='✖';btn.style.cssText='position:absolute;bottom:6px;right:6px';
-btn.onclick=e=>{e.stopPropagation();const arr=collectionMode==='fav'?state.favorites:state.saved;arr.splice(i,1);persist();renderCollection(arr);toast('Kaldırıldı')};item.appendChild(btn);
-item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',i);item.classList.add('dragging')});
-item.addEventListener('dragend',()=>item.classList.remove('dragging'));
-item.addEventListener('dragover',e=>e.preventDefault());
-item.addEventListener('drop',e=>{e.preventDefault();const from=+e.dataTransfer.getData('text'),to=i;const arr=collectionMode==='fav'?state.favorites:state.saved;const[m]=arr.splice(from,1);arr.splice(to,0,m);persist();renderCollection(arr)});
-g.appendChild(item)})}
-async function diagnose(){
- $('#diagnosis').innerHTML='<div class="diag">🩺 Kontrol ediliyor…</div>';
- const s=(state.settings.serpKey||'').trim();let out='';
- if(!s)out='<div class="diag"><strong>SerpApi:</strong> Anahtar yok.</div>';
- else{try{const r=await fetch('/api/search?key='+encodeURIComponent(s)+'&q=rem anime');const j=await r.json();
-  out=j?.error?`<div class="diag"><strong>SerpApi:</strong> <span class="bad">Reddedildi</span><br>${j.error}</div>`:(j?.images_results?.length?`<div class="diag"><strong>SerpApi:</strong> <span class="ok">Çalışıyor</span><br>${j.images_results.length} görsel</div>`:`<div class="diag"><strong>SerpApi:</strong> <span class="warn">Sonuç yok</span></div>`)}catch(e){out='<div class="diag"><strong>SerpApi:</strong> <span class="bad">Test edilemedi</span></div>'}}
- $('#diagnosis').innerHTML=out}
-function openSettings(){$('#serpKey').value=state.settings.serpKey||'';$('#geminiKey').value=state.settings.geminiKey||'';$('#theme').value=state.settings.theme;$('#settings').showModal()}
-function saveSettings(){state.settings.serpKey=$('#serpKey').value.trim();state.settings.geminiKey=$('#geminiKey').value.trim();state.settings.theme=$('#theme').value;persist();applyTheme();renderStatus();$('#settings').close();toast('Ayarlar kaydedildi')}
-$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')findGoogle(0)});
-renderSidebar();renderStatus();
- from flask import send_file
-from io import BytesIO
-@app.get('/api/download')
-def download():
-    url=request.args.get('url','')
-    if not url:
-        return jsonify({'error':'url eksik'}),400
-    try:
-        req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
-        with urllib.request.urlopen(req,timeout=25) as r:
-            data=r.read()
-            ctype=r.headers.get('Content-Type','image/jpeg')
-        return send_file(BytesIO(data),mimetype=ctype,as_attachment=True,download_name='image.jpg')
-    except Exception as e:
-        return jsonify({'error':str(e)}),502
-</script></body></html>
+
+<div class="layout">
+  <aside class="sidebar">
+    <button class="sidebtn active" data-view="search">🔍 Arama</button>
+    <button class="sidebtn" data-view="fav">❤️ Favoriler</button>
+    <button class="sidebtn" data-view="saved">📁 Kaydedilenler</button>
+    <button class="sidebtn" data-view="history">🕘 Geçmiş</button>
