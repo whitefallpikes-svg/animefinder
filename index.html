@@ -62,3 +62,128 @@ input:focus,select:focus,textarea:focus{border-color:#7c5cff}
     <button class="sidebtn" data-view="fav">❤️ Favoriler</button>
     <button class="sidebtn" data-view="saved">📁 Kaydedilenler</button>
     <button class="sidebtn" data-view="history">🕘 Geçmiş</button>
+  </aside>
+  <main class="content">
+    <div id="viewSearch">
+      <div class="status" id="status">Hazır.</div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <div id="viewFav" style="display:none">
+      <h3>❤️ Favoriler</h3>
+      <div class="cgrid" id="favGrid"></div>
+    </div>
+    <div id="viewSaved" style="display:none">
+      <h3>📁 Kaydedilenler</h3>
+      <div class="cgrid" id="savedGrid"></div>
+    </div>
+    <div id="viewHistory" style="display:none">
+      <h3>🕘 Geçmiş</h3>
+      <div id="historyList" class="status"></div>
+    </div>
+  </main>
+</div>
+
+<div class="viewer" id="viewer">
+  <img id="viewerImg">
+  <div class="actions">
+    <button class="btn" id="saveBtn">📁 Kaydet</button>
+    <button class="btn ghost" id="favBtn">❤️ Favori</button>
+    <button class="btn ghost" id="closeViewer">Kapat</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+let state=JSON.parse(localStorage.getItem('anime_state')||'{}');
+state.favorites=state.favorites||[];state.saved=state.saved||[];state.history=state.history||[];
+let current=null,view='search';
+
+function persist(){localStorage.setItem('anime_state',JSON.stringify(state))}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1800)}
+
+function card(x){
+ const d=document.createElement('div');d.className='card';
+ const img=document.createElement('img');img.src=x.thumb;img.loading='lazy';
+ img.onclick=()=>openViewer(x);
+ const meta=document.createElement('div');meta.className='meta';
+ meta.innerHTML='<span>'+(x.title||'')+'</span>';
+ const fav=document.createElement('button');fav.className='fav';fav.textContent=state.favorites.some(f=>f.thumb===x.thumb)?'★':'☆';
+ fav.onclick=e=>{e.stopPropagation();toggleFav(x)};
+ d.appendChild(img);d.appendChild(meta);d.appendChild(fav);
+ return d;
+}
+
+function renderResults(items){
+ const g=$('#grid');g.innerHTML='';
+ if(!items.length){$('#status').textContent='Sonuç yok.';return}
+ items.forEach(x=>g.appendChild(card(x)));
+ $('#status').textContent=items.length+' sonuç';
+}
+
+async function search(){
+ const q=$('#q').value.trim();if(!q)return;
+ $('#status').textContent='Aranıyor…';
+ try{
+  const r=await fetch('/api/search?q='+encodeURIComponent(q)+'&type='+$('#type').value);
+  const data=await r.json();
+  renderResults(data.items||[]);
+  if(!state.history.includes(q)){state.history.unshift(q);state.history=state.history.slice(0,30);persist()}
+ }catch(e){$('#status').textContent='Arama hatası'}
+}
+
+function openViewer(x){current=x;$('#viewerImg').src=x.full||x.thumb;$('#viewer').classList.add('open')}
+$('#closeViewer').onclick=()=>$('#viewer').classList.remove('open');
+
+function toggleFav(x){
+ const i=state.favorites.findIndex(f=>f.thumb===x.thumb);
+ if(i>-1){state.favorites.splice(i,1);toast('Favoriden çıkarıldı')}
+ else{state.favorites.unshift(x);toast('Favorilere eklendi')}
+ persist();renderCollections();
+}
+
+$('#saveBtn').onclick=()=>{
+ if(!current)return;
+ if(!state.saved.some(s=>s.thumb===current.thumb)){state.saved.unshift(current);persist();toast('Kaydedildi');renderCollections()}
+ else toast('Zaten kayıtlı');
+};
+$('#favBtn').onclick=()=>{if(current)toggleFav(current)};
+
+function renderCollections(){
+ const fg=$('#favGrid'),sg=$('#savedGrid');
+ fg.innerHTML='';sg.innerHTML='';
+ state.favorites.forEach(x=>fg.appendChild(collectionItem(x,'fav')));
+ state.saved.forEach(x=>sg.appendChild(collectionItem(x,'saved')));
+}
+
+function collectionItem(x,mode){
+ const d=document.createElement('div');d.className='citem';
+ const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);
+ const del=document.createElement('button');del.className='small ghost';del.textContent='✖';
+ del.style.cssText='position:absolute;top:6px;right:6px';
+ del.onclick=e=>{e.stopPropagation();
+  const arr=mode==='fav'?state.favorites:state.saved;
+  const i=arr.findIndex(a=>a.thumb===x.thumb);
+  if(i>-1){arr.splice(i,1);persist();renderCollections();toast('Kaldırıldı')}
+ };
+ d.appendChild(img);d.appendChild(del);
+ return d;
+}
+
+function showView(v){
+ view=v;
+ ['Search','Fav','Saved','History'].forEach(x=>$('#view'+x).style.display='none');
+ $('#view'+v[0].toUpperCase()+v.slice(1)).style.display='block';
+ document.querySelectorAll('.sidebtn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+ if(v==='fav'||v==='saved')renderCollections();
+ if(v==='history'){$('#historyList').textContent=state.history.join(' • ')||'Geçmiş boş'}
+}
+
+document.querySelectorAll('.sidebtn').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+$('#searchBtn').onclick=search;
+$('#q').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+
+renderCollections();
+</script>
+</body>
+</html>
