@@ -62,17 +62,19 @@ dialog::backdrop{background:rgba(0,0,0,.72)}.viewer{display:grid;grid-template-c
 <div class="toast" id="toast"></div>
 <script>
 const $=s=>document.querySelector(s);
-let state;try{state=JSON.parse(localStorage.getItem('acf_v2_site')||'null')||{}}catch(e){state={}}
+let state;try{state=JSON.parse(localStorage.getItem('acf_v3_site')||'null')||{}}catch(e){state={}}
 state.history??=[];state.favorites??=[];state.saved??=[];state.cache??={};state.settings??={geminiKey:'',serpKey:'',theme:'purple'};
 let items=[],current=null,lastError=null,page=0,loading=false,lastQuery='',collectionMode='fav';
-function persist(){localStorage.setItem('acf_v2_site',JSON.stringify(state))}
+function persist(){localStorage.setItem('acf_v3_site',JSON.stringify(state))}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400)}
 function applyTheme(){const t=state.settings.theme;document.documentElement.style.setProperty('--accent',t==='pink'?'#ec4899':t==='blue'?'#6366f1':'#8b5cf6');document.documentElement.style.setProperty('--accent2',t==='pink'?'#a855f7':t==='blue'?'#22d3ee':'#ec4899')}applyTheme();
 function cur(){return $('#q').value.trim()}
 function renderSidebar(){
-$('#history').innerHTML=state.history.length?state.history.slice(0,14).map(x=>`<span class="chip" onclick="useHistory('${x.replace(/'/g,"\\'")}')">${x}</span>`).join(''):'<div class="title">Henüz arama yapılmadı.</div>';
+$('#history').innerHTML=state.history.length?state.history.slice(0,14).map(x=>`<span class="chip" data-q="${encodeURIComponent(x)}">${x}</span>`).join(''):'<div class="title">Henüz arama yapılmadı.</div>';
+document.querySelectorAll('#history .chip').forEach(el=>el.onclick=()=>{$('#q').value=decodeURIComponent(el.dataset.q);findGoogle(0)});
 if(!$('#q').value&&state.history[0])$('#q').placeholder='Son arama: '+state.history[0]}
-function useHistory(x){$('#q').value=x;findGoogle(0)}
+function removeFav(i){state.favorites.splice(i,1);persist();renderSidebar();if(collectionMode==='fav')openCollection('fav');toast('Favoriden kaldırıldı')}
+function removeSaved(i){state.saved.splice(i,1);persist();renderSidebar();if(collectionMode==='saved')openCollection('saved');toast('Kayıttan kaldırıldı')}
 function renderStatus(){const g=(state.settings.geminiKey||'').trim(),s=(state.settings.serpKey||'').trim();
 $('#status').innerHTML=`<div class="kv"><span>Kaynak</span><span class="ok">Google</span></div>
 <div class="kv"><span>Gemini</span><span class="${g?'ok':'warn'}">${g?'Hazır':'Hızlı mod'}</span></div>
@@ -125,8 +127,12 @@ async function findGoogle(p){
  }catch(e){if(p===0){lastError={step:'SerpApi',reason:e.message||'Bağlantı hatası',fix:'Anahtar/kota kontrol et'};showFailure()}else toast('Yeni sayfa yüklenemedi')}
  loading=false;renderStatus()}
 function renderResults(list){if(!list.length){$('#results').innerHTML='<div class="status">Sonuç yok.</div>';return}
-$('#results').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>${list[0].query}</strong><span class="badge">${list.length} görsel</span></div><div class="grid">`+list.map((x,i)=>`<div class="imgcard"><span class="source">Google</span><img src="${x.thumb}" onclick='openViewer(window.__items[${i}])'><div class="meta"><div class="title">${x.title||''}</div><div class="row"><button class="small ghost" onclick='openViewer(window.__items[${i}])'>Aç</button><button class="small ghost" onclick='saveItem(window.__items[${i}])'>📁</button><button class="small ghost" onclick='favItem(window.__items[${i}])'>❤️</button></div></div></div>`).join('')+'</div>';
-window.__items=list}
+$('#results').innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><strong>${list[0].query}</strong><span class="badge">${list.length} görsel</span></div><div class="grid">`+list.map((x,i)=>`<div class="imgcard"><span class="source">Google</span><img src="${x.thumb}" data-i="${i}"><div class="meta"><div class="title">${x.title||''}</div><div class="row"><button class="small ghost" data-open="${i}">Aç</button><button class="small ghost" data-save="${i}">📁</button><button class="small ghost" data-fav="${i}">❤️</button></div></div></div>`).join('')+'</div>';
+window.__items=list;
+document.querySelectorAll('#results img[data-i]').forEach(el=>el.onclick=()=>openViewer(window.__items[+el.dataset.i]));
+document.querySelectorAll('#results [data-open]').forEach(el=>el.onclick=()=>openViewer(window.__items[+el.dataset.open]));
+document.querySelectorAll('#results [data-save]').forEach(el=>el.onclick=()=>saveItem(window.__items[+el.dataset.save]));
+document.querySelectorAll('#results [data-fav]').forEach(el=>el.onclick=()=>favItem(window.__items[+el.dataset.fav]))}
 window.addEventListener('scroll',()=>{if(loading||!items.length)return;if(innerHeight+scrollY>=document.body.offsetHeight-400){page++;findGoogle(page)}});
 function openViewer(x){current=x;$('#viewerImg').src=x.full||x.thumb;$('#viewerTitle').textContent=x.title||x.query;$('#viewerSource').textContent='Google · '+(x.sourceDetail||'');$('#viewer').showModal()}
 function saveItem(x){if(!state.saved.some(s=>s.full===x.full)){state.saved.unshift(x);persist();toast('Kaydedilenlere eklendi')}else toast('Zaten kayıtlı')}
@@ -144,9 +150,17 @@ function openCollection(mode){collectionMode=mode;const list=mode==='fav'?state.
 $('#cIcon').textContent=mode==='fav'?'❤️':'📁';$('#cTitle').textContent=mode==='fav'?'Favoriler':'Kaydedilenler';
 renderCollection(list);$('#collection').classList.add('open')}
 function closeCollection(){$('#collection').classList.remove('open')}
-function renderCollection(list){const g=$('#cGrid');g.innerHTML=list.map((x,i)=>`<div class="citem" draggable="true" data-i="${i}"><img src="${x.thumb}" onclick='openViewer(${JSON.stringify(x).replace(/"/g,'&quot;')})'><div class="row" style="position:absolute;bottom:6px;right:6px"><button class="small ghost" onclick="event.stopPropagation();removeFromCollection(${i})">✖</button></div></div>`).join('')||'<div class="status">Henüz görsel yok.</div>';
-g.querySelectorAll('.citem').forEach(el=>{el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',el.dataset.i);el.classList.add('dragging')});el.addEventListener('dragend',()=>el.classList.remove('dragging'));el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const from=+e.dataTransfer.getData('text'),to=+el.dataset.i;const arr=collectionMode==='fav'?state.favorites:state.saved;const[m]=arr.splice(from,1);arr.splice(to,0,m);persist();renderCollection(arr)})})}
-function removeFromCollection(i){const arr=collectionMode==='fav'?state.favorites:state.saved;arr.splice(i,1);persist();renderCollection(arr);toast('Kaldırıldı')}
+function renderCollection(list){const g=$('#cGrid');g.innerHTML='';
+if(!list.length){g.innerHTML='<div class="status">Henüz görsel yok.</div>';return}
+list.forEach((x,i)=>{const item=document.createElement('div');item.className='citem';item.draggable=true;item.dataset.i=i;
+const img=document.createElement('img');img.src=x.thumb;img.onclick=()=>openViewer(x);item.appendChild(img);
+const btn=document.createElement('button');btn.className='small ghost';btn.textContent='✖';btn.style.cssText='position:absolute;bottom:6px;right:6px';
+btn.onclick=e=>{e.stopPropagation();const arr=collectionMode==='fav'?state.favorites:state.saved;arr.splice(i,1);persist();renderCollection(arr);toast('Kaldırıldı')};item.appendChild(btn);
+item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text',i);item.classList.add('dragging')});
+item.addEventListener('dragend',()=>item.classList.remove('dragging'));
+item.addEventListener('dragover',e=>e.preventDefault());
+item.addEventListener('drop',e=>{e.preventDefault();const from=+e.dataTransfer.getData('text'),to=i;const arr=collectionMode==='fav'?state.favorites:state.saved;const[m]=arr.splice(from,1);arr.splice(to,0,m);persist();renderCollection(arr)});
+g.appendChild(item)})}
 async function diagnose(){
  $('#diagnosis').innerHTML='<div class="diag">🩺 Kontrol ediliyor…</div>';
  const s=(state.settings.serpKey||'').trim();let out='';
